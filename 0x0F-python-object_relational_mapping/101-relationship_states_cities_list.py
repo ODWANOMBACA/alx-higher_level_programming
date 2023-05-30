@@ -1,18 +1,26 @@
 #!/usr/bin/python3
-"""lists all states with a name starting with N
-(upper N) from the database hbtn_0e_0_usa"""
+"""
+lists all State objects from a database
+"""
 
-if __name__ == '__main__':
+import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sys import argv
+from relationship_state import Base, State
+from relationship_city import City
 
-    import MySQLdb
-    import sys
+if __name__ == "__main__":
 
-    db = MySQLdb.connect(host='localhost', port=3306,
-                         user=sys.argv[1], passwd=sys.argv[2], db=sys.argv[3])
-
-    cur = db.cursor()
-    cur.execute("""SELECT * FROM states WHERE name
-                LIKE BINARY 'N%' ORDER BY states.id ASC""")
-    rows = cur.fetchall()
-    for row in rows:
-        print(row)
+    eng = create_engine('mysql+mysqldb://{}:{}@localhost/{}'.format(argv[1],
+                                                                    argv[2],
+                                                                    argv[3]))
+    Base.metadata.create_all(eng)
+    Session = sessionmaker(bind=eng)
+    session = Session()
+    res = session.query(State).order_by(State.id).all()
+    for state in res:
+        print("{}: {}".format(state.id, state.name))
+        for city in state.cities:
+            print("    {}: {}".format(city.id, city.name))
+    session.close()
